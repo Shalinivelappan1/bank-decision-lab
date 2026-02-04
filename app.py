@@ -315,3 +315,28 @@ else:
             "The cost of delay is usually borne by depositors and taxpayers, "
             "not the original decision-makers."
         )
+        st.subheader("🧾 Wrap-Up: What Did We Learn?")
+
+st.markdown("""
+**1. The same facts produce different decisions**  
+Changing roles changed outcomes — even when information stayed constant.  
+This reveals how incentives shape judgment.
+
+**2. Comfort is redistributed, not eliminated**  
+Round 1 concentrated comfort with growth decision-makers.  
+Round 2 shifted comfort toward risk managers and regulators.
+
+**3. Delay is the most common failure mode**  
+Most banking collapses arise from repeated, rational delays — not reckless bets.
+
+**4. Growth and stability are a trade-off**  
+Slower growth is often the price of resilience, not a failure of strategy.
+
+**5. Banking crises are incentive failures, not moral failures**  
+Systemic risk emerges from misaligned roles, not bad intentions.
+
+**Key takeaway:**  
+*Banks choose their failure mode through strategy.  
+The best banks optimize resilience — not headline growth.*
+""")
+
