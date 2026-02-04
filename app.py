@@ -139,7 +139,7 @@ mode = st.sidebar.radio(
 # =================================================
 if mode == "Student View":
 
-    st.title("🏦 Banking Fragility Lab: Decision-Making Under Stress")
+    st.title("🏦 Banking Fragility Lab: Decision-Making Under Stress-Designed by Prof.Shalini Velappan")
 
     st.write(
         "There are no correct answers. "
@@ -315,8 +315,8 @@ else:
             "The cost of delay is usually borne by depositors and taxpayers, "
             "not the original decision-makers."
         )
-        st.subheader("🧾 Wrap-Up: What Did We Learn?")
-
+        
+st.subheader("🧾 Wrap-Up: What Did We Learn?")
 st.markdown("""
 **1. The same facts produce different decisions**  
 Changing roles changed outcomes — even when information stayed constant.  
