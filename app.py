@@ -112,7 +112,7 @@ creds = Credentials.from_service_account_info(
 client = gspread.authorize(creds)
 
 sheet = client.open_by_url(
-    "PASTE_YOUR_GOOGLE_SHEET_URL_HERE"
+    "https://docs.google.com/spreadsheets/d/1iZJJMBwx6HRon73sKzbxoX99ocT6Fg0mS9RItGrve1U/edit#gid=0"
 ).sheet1
 
 # -------------------------------------------------
