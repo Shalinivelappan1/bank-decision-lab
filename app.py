@@ -5,17 +5,17 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
-# -------------------------------------------------
+# =================================================
 # PAGE CONFIG
-# -------------------------------------------------
+# =================================================
 st.set_page_config(
     page_title="Banking Fragility Decision Lab",
     layout="wide"
 )
 
-# -------------------------------------------------
+# =================================================
 # QUESTION BANK
-# -------------------------------------------------
+# =================================================
 QUESTION_BANK = {
     "Growth-at-All-Costs": {
         "id": "Q3A",
@@ -79,26 +79,37 @@ QUESTION_BANK = {
     }
 }
 
-# -------------------------------------------------
-# DECISION DIRECTION MAP (for shift analysis)
-# -------------------------------------------------
-DECISION_DIRECTION = {
-    "Continue aggressive growth to protect market share": "Aggressive",
-    "Push credit growth to improve ROE": "Aggressive",
-    "Take calculated risks to accelerate growth": "Aggressive",
-    "Pause growth and clean up the balance sheet": "Conservative",
-    "Raise capital immediately": "Conservative",
-    "Maintain conservative strategy and protect stability": "Conservative",
-    "Slow down lending": "Conservative",
-    "Delay and monitor": "Delay",
-    "Depend on liquidity support": "Delay",
-    "Seek regulatory forbearance to buy time": "Delay",
-    "Continue business as usual": "Delay"
+# =================================================
+# SENTIMENT MAP (TEACHING JUDGMENT LAYER)
+# =================================================
+SENTIMENT_MAP = {
+    "Growth-at-All-Costs": {
+        "Continue aggressive growth to protect market share": {
+            "CEO": "😃", "CRO": "😟", "Regulator": "😠"
+        },
+        "Pause growth and clean up the balance sheet": {
+            "CEO": "😐", "CRO": "🙂", "Regulator": "🙂"
+        },
+        "Raise capital even if ROE and valuation fall": {
+            "CEO": "😟", "CRO": "🙂", "Regulator": "😃"
+        },
+        "Seek regulatory forbearance to buy time": {
+            "CEO": "😐", "CRO": "😟", "Regulator": "😠"
+        }
+    },
+    "Fortress Bank": {
+        "Maintain conservative strategy and protect stability": {
+            "CEO": "🙂", "CRO": "😃", "Regulator": "😃"
+        },
+        "Push credit growth to improve ROE": {
+            "CEO": "😃", "CRO": "😟", "Regulator": "😠"
+        }
+    }
 }
 
-# -------------------------------------------------
+# =================================================
 # GOOGLE SHEETS CONNECTION
-# -------------------------------------------------
+# =================================================
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
@@ -115,9 +126,9 @@ sheet = client.open_by_url(
     "https://docs.google.com/spreadsheets/d/1iZJJMBwx6HRon73sKzbxoX99ocT6Fg0mS9RItGrve1U/edit#gid=0"
 ).sheet1
 
-# -------------------------------------------------
+# =================================================
 # MODE SELECT
-# -------------------------------------------------
+# =================================================
 mode = st.sidebar.radio(
     "Select Mode",
     ["Student View", "Instructor View"]
@@ -130,11 +141,17 @@ if mode == "Student View":
 
     st.title("🏦 Banking Fragility Lab: Decision-Making Under Stress")
 
+    st.write(
+        "There are no correct answers. "
+        "Your task is to decide based on the role you are playing. "
+        "Different roles see the same situation differently — that tension is the lesson."
+    )
+
     with st.form("student_form"):
 
         participant_id = st.text_input(
-            "Participant ID (any name/code)",
-            help="Used only for before–after comparison"
+            "Participant ID (any name / roll no.)",
+            help="Used only to compare Round 1 vs Round 2 decisions"
         )
 
         role = st.selectbox(
@@ -158,7 +175,7 @@ if mode == "Student View":
         )
 
         confidence = st.slider(
-            "How confident are you?",
+            "How confident are you in this decision?",
             1, 5, 3
         )
 
@@ -186,7 +203,7 @@ if mode == "Student View":
             reflection,
             round_no
         ])
-        st.success("Decision recorded successfully.")
+        st.success("✅ Decision recorded.")
 
 # =================================================
 # 👩‍🏫 INSTRUCTOR VIEW
@@ -207,64 +224,94 @@ else:
         list(QUESTION_BANK.keys())
     )
 
-    bank_df = df[df["Bank_Type"] == selected_bank]
-
     # ------------------------------
-    # BEFORE vs AFTER ROLE SWITCH
+    # ROUND-WISE SENTIMENT
     # ------------------------------
-    st.subheader("Before vs After Role-Switch Analysis")
+    st.subheader("Round-wise Sentiment Comparison")
 
-    paired = (
-        bank_df
-        .groupby(["Participant_ID"])
-        .filter(lambda x: set(x["Round"]) == {1, 2})
-    )
+    def get_sentiment(round_no):
+        round_df = df[
+            (df["Bank_Type"] == selected_bank) &
+            (df["Round"] == round_no)
+        ]
+        if round_df.empty:
+            return None
 
-    before = paired[paired["Round"] == 1]
-    after = paired[paired["Round"] == 2]
-
-    comparison = before.merge(
-        after,
-        on=["Participant_ID", "Bank_Type"],
-        suffixes=("_Before", "_After")
-    )
-
-    if not comparison.empty:
-
-        comparison["Changed"] = (
-            comparison["Decision_Before"] != comparison["Decision_After"]
-        )
-
-        change_rate = comparison["Changed"].mean() * 100
-
-        st.metric(
-            "Decision Change Rate After Role Switch",
-            f"{change_rate:.1f}%"
-        )
-
-        comparison["Direction_Before"] = comparison["Decision_Before"].map(DECISION_DIRECTION)
-        comparison["Direction_After"] = comparison["Decision_After"].map(DECISION_DIRECTION)
-
-        st.subheader("Decision Shift Table")
-        st.dataframe(
-            comparison[[
-                "Participant_ID",
-                "Role_Before",
-                "Decision_Before",
-                "Role_After",
-                "Decision_After"
-            ]],
-            use_container_width=True
-        )
-
-        st.subheader("Decision Direction Shift")
-        st.dataframe(
-            comparison
-            .groupby(["Direction_Before", "Direction_After"])
+        dominant_decision = (
+            round_df
+            .groupby("Decision")
             .size()
-            .reset_index(name="Count"),
-            use_container_width=True
+            .idxmax()
         )
 
-    else:
-        st.info("Waiting for participants to complete both rounds.")
+        mapping = SENTIMENT_MAP.get(selected_bank, {}).get(dominant_decision, {})
+        return {
+            "Scenario": selected_bank,
+            "CEO": mapping.get("CEO", "—"),
+            "CRO": mapping.get("CRO", "—"),
+            "Regulator": mapping.get("Regulator", "—")
+        }
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 🟦 Round 1 Sentiment")
+        r1 = get_sentiment(1)
+        if r1:
+            st.dataframe(pd.DataFrame([r1]), use_container_width=True)
+        else:
+            st.info("No Round 1 data yet.")
+
+    with col2:
+        st.markdown("### 🟧 Round 2 Sentiment")
+        r2 = get_sentiment(2)
+        if r2:
+            st.dataframe(pd.DataFrame([r2]), use_container_width=True)
+        else:
+            st.info("No Round 2 data yet.")
+
+    st.caption(
+        "Legend: 😃 Comfortable | 🙂 Acceptable | 😐 Neutral | 😟 Worried | 😠 Alarmed"
+    )
+
+    # ------------------------------
+    # REAL-WORLD LEARNING INSIGHTS
+    # ------------------------------
+    st.subheader("🧠 Real-World Insights from This Lab")
+
+    with st.expander("1️⃣ Incentives, not intelligence, drive bank decisions"):
+        st.write(
+            "Bank failures rarely occur because managers lack information. "
+            "They occur because different roles face different incentives. "
+            "CEOs are rewarded for growth, CROs for loss avoidance, and regulators "
+            "for system stability. The same facts therefore lead to different choices."
+        )
+
+    with st.expander("2️⃣ Delay is the most common — and dangerous — decision"):
+        st.write(
+            "Across global banking crises, delay is the most frequent response to stress. "
+            "Delay feels rational individually but is systemically costly. "
+            "Most bank collapses were not sudden — they were built through repeated delays."
+        )
+
+    with st.expander("3️⃣ Capital problems usually appear as liquidity crises"):
+        st.write(
+            "Banks typically fail when confidence collapses and liquidity evaporates, "
+            "not when capital ratios first weaken. "
+            "What looks like a liquidity shock is often a capital problem postponed."
+        )
+
+    with st.expander("4️⃣ Stability has a visible cost — and an invisible benefit"):
+        st.write(
+            "When decisions shift toward caution, growth slows. "
+            "This is not a failure — it is the price of resilience. "
+            "Strong banking systems prioritize survival over peak profitability."
+        )
+
+    with st.expander("5️⃣ The regulator’s problem is always timing"):
+        st.write(
+            "Regulators face a dilemma: act early and face criticism, "
+            "or act late and face crisis. "
+            "The cost of delay is usually borne by depositors and taxpayers, "
+            "not the original decision-makers."
+        )
