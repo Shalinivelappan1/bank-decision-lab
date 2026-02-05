@@ -144,7 +144,7 @@ mode = st.sidebar.radio("Mode", ["Student View", "Instructor View"])
 # =================================================
 if mode == "Student View":
 
-    st.title("🏦 Banking Fragility Decision Lab")
+    st.title("🏦 Banking Fragility Decision Lab-Designed by Prof.Shalini Velappan")
     participant = st.text_input("Participant ID")
     role = st.selectbox("Role", ["CEO","CRO","Regulator","HR"])
     bank = st.selectbox("Bank Archetype", list(QUESTION_BANK.keys()))
@@ -172,7 +172,7 @@ if mode == "Student View":
 # =================================================
 else:
 
-    st.title("📊 Professor Dashboard — Banking Fragility Lab")
+    st.title("📊 Professor Dashboard — Banking Fragility Lab-Designed by Prof.Shalini Velappan")
     st_autorefresh(interval=4000)
 
     df = pd.DataFrame(sheet.get_all_records())
@@ -236,7 +236,7 @@ else:
     )
 
     # 🎤 Auto Debrief Script
-    st.subheader("🎤 Professor Debrief Script")
+    st.subheader("🎤 Debrief Script")
     st.markdown(f"""
     **What happened here?**  
     The class converged on **{dominant}**.
